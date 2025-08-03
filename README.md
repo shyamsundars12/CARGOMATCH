@@ -27,7 +27,7 @@ CargoMatch is an end-to-end logistics booking platform that connects Importers/E
 | Mobile App    | Flutter (for Importer/Exporter)|
 | Auth          | JWT (JSON Web Tokens)         |
 | Payments      | Razorpay                      |
-| Realtime Notifs | Firebase Cloud Messaging (FCM) |
+| Realtime Notification | Firebase Cloud Messaging (FCM) |
 
 ---
 
