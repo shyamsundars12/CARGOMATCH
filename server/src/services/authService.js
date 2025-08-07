@@ -6,8 +6,9 @@ const repo = require('../repository/authRepository')
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-
- const register = async ({ name, email, password }) => {
+//company registeration , pan card, gst as pdf
+//
+ const register = async ({ name, email, password, confirmPassword, phone, address , Company_name, pan, gst, company_reg }) => {
   if (!name || !email || !password) {
     throw new Error("name, email and password required");
   }

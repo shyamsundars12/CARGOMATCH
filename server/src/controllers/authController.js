@@ -17,7 +17,7 @@ const register = async (req, res) => {
 const login = async(req, res)=>{
   try{
     const result = await authService.login(req.body);
-        console.log("✅ login result:", result);
+        console.log("✅ login result:", result);  
         res.status(200).json(result);
   }catch(err){
     res.status(400).json({error: err.mesage});
