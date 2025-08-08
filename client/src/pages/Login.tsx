@@ -52,6 +52,9 @@ export default function Login() {
         >
           Login
         </button>
+        <div style={{ marginTop: 16, textAlign: 'center' }}>
+          Don't have an account? <span style={{ color: '#2563eb', cursor: 'pointer' }} onClick={() => navigate('/register')}>Register</span>
+        </div>
       </form>
     </div>
   );
