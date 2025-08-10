@@ -1,14 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom";
 
 const navItems = [
-  { name: "Dashboard", path: "/dashboard" },
-  { name: "Profile", path: "/profile" },
-  { name: "Containers", path: "/containers" },
-  { name: "Bookings", path: "/bookings" },
-  { name: "Shipments", path: "/shipments" },
+  { name: "Dashboard", path: "/admin/dashboard" },
+  { name: "Users", path: "/admin/users" },
+  { name: "Container Types", path: "/admin/container-types" },
+  { name: "Containers", path: "/admin/containers" },
+  { name: "Bookings", path: "/admin/bookings" },
 ];
 
-export default function Sidebar() {
+export default function AdminSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -29,7 +29,7 @@ export default function Sidebar() {
           borderBottom: "1px solid #eee",
         }}
       >
-        LSP Dashboard
+        Admin Panel
       </div>
       <nav style={{ marginTop: 24 }}>
         {navItems.map((item) => (
@@ -48,11 +48,12 @@ export default function Sidebar() {
             {item.name}
           </div>
         ))}
+
+        {/* Logout */}
         <div
           onClick={() => {
-            localStorage.removeItem("token");
-            localStorage.removeItem("role");
-            navigate("/login");
+            localStorage.removeItem("adminToken");
+            navigate("/admin/login");
           }}
           style={{
             padding: "12px 32px",

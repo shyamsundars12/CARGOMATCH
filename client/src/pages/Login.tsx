@@ -18,8 +18,10 @@ export default function Login() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
-      localStorage.setItem('token', data.token);
+      localStorage.setItem('token', data.token); // ✅ Save LSP token
+      localStorage.removeItem('adminToken');
       navigate('/dashboard');
+
     } catch (err: any) {
       setError(err.message);
     }
