@@ -13,7 +13,7 @@ export default function AdminUserDetail() {
   // Helper to convert Windows file path to URL
   const getPdfUrl = (filePath: string) => {
     if (!filePath) return null;
-    const cleanPath = filePath.replace(/\\\\/g, '/').replace(/\\/g, '/');
+    const cleanPath = filePath.replace(/\\\\/g, "/").replace(/\\/g, "/");
     return `http://localhost:5000/${cleanPath}`;
   };
 
@@ -23,7 +23,9 @@ export default function AdminUserDetail() {
 
     return (
       <div style={{ marginBottom: 24 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>{title}</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
+          {title}
+        </h3>
         <div
           style={{
             border: "1px solid #ddd",
@@ -78,7 +80,6 @@ export default function AdminUserDetail() {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to update approval status");
       }
-      // The backend returns the full updated user object including updated profile info
       const updatedUser = await res.json();
       setUser(updatedUser);
     } catch (err: any) {
@@ -95,8 +96,15 @@ export default function AdminUserDetail() {
   const isLSP = user.role === "lsp";
   const isTrader = user.role === "trader";
 
-  // Show buttons only if not approved
-  const showApproveRejectButtons = !user.is_approved;
+  // Show Approve/Reject only if still pending
+  const showApproveRejectButtons = user.is_approved === null;
+
+  // Display readable status
+  const getStatusLabel = () => {
+    if (user.is_approved === null) return "Pending";
+    if (user.is_approved === true) return "Approved";
+    return "Rejected";
+  };
 
   return (
     <div style={{ padding: 32, maxWidth: 1200, margin: "0 auto" }}>
@@ -125,10 +133,11 @@ export default function AdminUserDetail() {
         <strong>Role:</strong> {user.role}
       </p>
       <p>
-        <strong>Approved:</strong> {user.is_approved ? "Yes" : "No"}
+        <strong>Status:</strong> {getStatusLabel()}
       </p>
       <p>
-        <strong>Created At:</strong> {new Date(user.created_at).toLocaleString()}
+        <strong>Created At:</strong>{" "}
+        {new Date(user.created_at).toLocaleString()}
       </p>
 
       {showApproveRejectButtons && (
@@ -216,8 +225,14 @@ export default function AdminUserDetail() {
               "Company Registration Certificate",
               user.profile.company_registration_doc_path
             )}
-            {renderPdfViewer("Business License", user.profile.business_license_doc_path)}
-            {renderPdfViewer("Insurance Certificate", user.profile.insurance_certificate_doc_path)}
+            {renderPdfViewer(
+              "Business License",
+              user.profile.business_license_doc_path
+            )}
+            {renderPdfViewer(
+              "Insurance Certificate",
+              user.profile.insurance_certificate_doc_path
+            )}
 
             {!user.profile.gst_certificate_path &&
               !user.profile.company_registration_doc_path &&

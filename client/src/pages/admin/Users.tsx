@@ -1,3 +1,4 @@
+// Users.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -22,17 +23,19 @@ export default function AdminUsers() {
   const filteredUsers =
     filterRole === "ALL" ? users : users.filter((u) => u.role === filterRole);
 
-  // Helper to get verification status label and color
+  // Helper to get verification status label and color (null | true | false)
   const getVerificationStatus = (user: any) => {
-    if (!user.is_approved) {
-      return { label: "Not Approved", color: "red" };
+    if (user.is_approved === null) {
+      return { label: "Pending Approval", color: "orange" };
     }
-    if (user.is_verified && user.verification_status === "approved") {
-      return { label: "Verified", color: "green" };
+    if (user.is_approved === true) {
+      return { label: "Approved", color: "green" };
     }
-    return { label: "Pending Verification", color: "orange" };
+    if (user.is_approved === false) {
+      return { label: "Rejected", color: "red" };
+    }
+    return { label: "Unknown", color: "gray" }; // fallback
   };
-
 
   return (
     <div style={{ padding: 32 }}>
@@ -62,7 +65,7 @@ export default function AdminUsers() {
             <th style={thStyle}>Name</th>
             <th style={thStyle}>Email</th>
             <th style={thStyle}>Role</th>
-            <th style={thStyle}>Verification Status</th> 
+            <th style={thStyle}>Approval Status</th>
           </tr>
         </thead>
         <tbody>

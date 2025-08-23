@@ -183,13 +183,20 @@ exports.updateUserAndProfileApproval = async (userId, is_approved) => {
     }
 
     // Update lsp_profiles table if record exists (only for LSP role)
+    let verificationStatus = null;
+    if (is_approved === true) {
+      verificationStatus = 'approved';
+    } else if (is_approved === false) {
+      verificationStatus = 'rejected';
+    }
+
     await client.query(
       `UPDATE lsp_profiles
        SET is_verified = $1,
            verification_status = $2,
            updated_at = NOW()
        WHERE user_id = $3`,
-      [is_approved, is_approved ? 'approved' : null, userId]
+      [is_approved, verificationStatus, userId]
     );
 
     await client.query('COMMIT');
