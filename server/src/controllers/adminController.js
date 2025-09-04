@@ -129,11 +129,12 @@ exports.updateApprovalStatus = async (req, res) => {
     const userId = req.params.id;
     const { is_approved } = req.body;
 
-    if (typeof is_approved === 'undefined') {
-      return res.status(400).json({ error: 'is_approved is required' });
+    // Validation: only allow true or false (null is only default when creating)
+    if (is_approved !== true && is_approved !== false) {
+      return res.status(400).json({ error: 'is_approved must be true (approved) or false (rejected)' });
     }
 
-    // Call service to update user and lsp profile approval status
+    // Call service to update user and LSP/trader profile approval status
     const updatedUser = await adminService.updateUserAndProfileApproval(userId, is_approved);
 
     res.json(updatedUser);

@@ -87,9 +87,11 @@ const getUserById = async (id) => {
 };
 
 const updateUserAndProfileApproval = async (userId, is_approved) => {
-  if (typeof is_approved !== 'boolean') {
-    throw new Error('Invalid is_approved value');
+  // Allow only true or false when updating
+  if (is_approved !== true && is_approved !== false) {
+    throw new Error('Invalid is_approved value. Must be true (approved) or false (rejected).');
   }
+
   return await repo.updateUserAndProfileApproval(userId, is_approved);
 };
 
