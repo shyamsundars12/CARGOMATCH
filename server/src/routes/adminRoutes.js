@@ -7,6 +7,7 @@ router.post('/login', controller.login);
 
 // Dashboard
 router.get('/dashboard', verifyToken, verifyAdmin, controller.getDashboardStats);
+router.get('/dashboard/charts', verifyToken, verifyAdmin, controller.getDashboardCharts);
 
 // Containers
 router.get('/containers', verifyToken, verifyAdmin, controller.getAllContainers);

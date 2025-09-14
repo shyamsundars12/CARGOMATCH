@@ -36,6 +36,11 @@ const getDashboardStats = async () => {
   return await repo.fetchDashboardStats();
 };
 
+// New function for chart data
+const getDashboardCharts = async () => {
+  return await repo.fetchDashboardCharts();
+};
+
 // -------------------- Containers --------------------
 const getAllContainers = async (status) => {
   return await repo.fetchAllContainers(status);
@@ -120,6 +125,7 @@ module.exports = {
 
   // Dashboard
   getDashboardStats,
+  getDashboardCharts,
 
   // Containers
   getAllContainers,

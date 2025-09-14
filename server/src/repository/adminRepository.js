@@ -2,6 +2,7 @@ const db = require('../config/db');
 
 // -------------------- Dashboard --------------------
 exports.fetchDashboardStats = async () => {
+  // Basic counts
   const containers = await db.query('SELECT COUNT(*) FROM containers');
   const bookings = await db.query('SELECT COUNT(*) FROM bookings');
   const users = await db.query("SELECT COUNT(*) FROM users");
@@ -9,13 +10,103 @@ exports.fetchDashboardStats = async () => {
   const traders = await db.query("SELECT COUNT(*) FROM users WHERE role='trader'");
   const containerTypes = await db.query("SELECT COUNT(*) FROM container_types");
 
+  // Key Metrics
+  const totalLspRegistrations = await db.query("SELECT COUNT(*) FROM users WHERE role='lsp'");
+  const approvedLsps = await db.query("SELECT COUNT(*) FROM users WHERE role='lsp' AND is_approved = true");
+  const totalComplaints = await db.query("SELECT COUNT(*) FROM complaints");
+  const resolvedComplaints = await db.query("SELECT COUNT(*) FROM complaints WHERE status = 'resolved'");
+  const activeUsers = await db.query("SELECT COUNT(*) FROM users WHERE is_approved = true");
+  
+  // Calculate estimated revenue (assuming 5% commission on bookings)
+  const revenueQuery = await db.query(`
+    SELECT COALESCE(SUM(price * 0.05), 0) as estimated_revenue 
+    FROM bookings 
+    WHERE status = 'confirmed'
+  `);
+  
+  // Calculate complaint resolution rate
+  const totalComplaintsCount = parseInt(totalComplaints.rows[0].count);
+  const resolvedComplaintsCount = parseInt(resolvedComplaints.rows[0].count);
+  const complaintResolutionRate = totalComplaintsCount > 0 
+    ? Math.round((resolvedComplaintsCount / totalComplaintsCount) * 100) 
+    : 0;
+
   return {
+    // Basic stats
     containers: containers.rows[0].count,
     bookings: bookings.rows[0].count,
     users: users.rows[0].count,
     lsps: lsps.rows[0].count,
     traders: traders.rows[0].count,
-    containerTypes: containerTypes.rows[0].count
+    containerTypes: containerTypes.rows[0].count,
+    
+    // Key Metrics
+    totalLspRegistrations: totalLspRegistrations.rows[0].count,
+    approvedLsps: approvedLsps.rows[0].count,
+    totalComplaints: totalComplaints.rows[0].count,
+    estimatedRevenue: parseFloat(revenueQuery.rows[0].estimated_revenue).toFixed(2),
+    activeUsers: activeUsers.rows[0].count,
+    complaintResolutionRate: complaintResolutionRate
+  };
+};
+
+// New function for chart data
+exports.fetchDashboardCharts = async () => {
+  // LSP Registration Status Bar Chart
+  const lspStatusData = await db.query(`
+    SELECT 
+      CASE 
+        WHEN is_approved = true THEN 'Approved'
+        WHEN is_approved = false THEN 'Rejected'
+        ELSE 'Pending'
+      END as status,
+      COUNT(*) as count
+    FROM users 
+    WHERE role = 'lsp'
+    GROUP BY is_approved
+  `);
+
+  // Complaints Distribution Pie Chart
+  const complaintsData = await db.query(`
+    SELECT 
+      CASE 
+        WHEN status = 'open' THEN 'Open'
+        WHEN status = 'resolved' THEN 'Resolved'
+        WHEN status = 'closed' THEN 'Closed'
+        ELSE 'Unknown'
+      END as status,
+      COUNT(*) as count
+    FROM complaints
+    GROUP BY status
+  `);
+
+  // Monthly Registration Trends (12 months)
+  const monthlyTrends = await db.query(`
+    SELECT 
+      DATE_TRUNC('month', created_at) as month,
+      COUNT(*) as count
+    FROM users 
+    WHERE created_at >= NOW() - INTERVAL '12 months'
+    GROUP BY DATE_TRUNC('month', created_at)
+    ORDER BY month
+  `);
+
+  // Container Types Distribution
+  const containerTypesData = await db.query(`
+    SELECT 
+      ct.type_name,
+      COUNT(c.id) as usage_count
+    FROM container_types ct
+    LEFT JOIN containers c ON ct.id = c.type_id
+    GROUP BY ct.id, ct.type_name
+    ORDER BY usage_count DESC
+  `);
+
+  return {
+    lspStatusData: lspStatusData.rows,
+    complaintsData: complaintsData.rows,
+    monthlyTrends: monthlyTrends.rows,
+    containerTypesData: containerTypesData.rows
   };
 };
 

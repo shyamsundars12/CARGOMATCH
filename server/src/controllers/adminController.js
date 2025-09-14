@@ -23,6 +23,16 @@ exports.getDashboardStats = async (req, res) => {
   }
 };
 
+// New endpoint for chart data
+exports.getDashboardCharts = async (req, res) => {
+  try {
+    const charts = await adminService.getDashboardCharts();
+    res.json(charts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Containers
 exports.getAllContainers = async (req, res) => {
   try {
