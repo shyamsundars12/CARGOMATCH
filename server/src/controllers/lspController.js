@@ -79,7 +79,6 @@ const createContainer = async (req, res) => {
 
 const getContainers = async (req, res) => {
   try {
-    const profile = await lspService.getLSPProfile(req.user.id);
     const filters = {
       status: req.query.status,
       is_available: req.query.is_available === 'true' ? true : req.query.is_available === 'false' ? false : undefined,
@@ -87,7 +86,7 @@ const getContainers = async (req, res) => {
       size: req.query.size
     };
     
-    const containers = await lspService.getContainers(profile.id, filters);
+    const containers = await lspService.getContainers(req.user.lsp_id, filters);
     res.status(200).json(containers);
   } catch (error) {
     console.error('Get Containers Error:', error.message);
@@ -131,13 +130,12 @@ const deleteContainer = async (req, res) => {
 // Booking Management
 const getBookings = async (req, res) => {
   try {
-    const profile = await lspService.getLSPProfile(req.user.id);
     const filters = {
       status: req.query.status,
       container_id: req.query.container_id
     };
     
-    const bookings = await lspService.getBookings(profile.id, filters);
+    const bookings = await lspService.getBookings(req.user.lsp_id, filters);
     res.status(200).json(bookings);
   } catch (error) {
     console.error('Get Bookings Error:', error.message);
@@ -159,9 +157,9 @@ const getBooking = async (req, res) => {
 const updateBookingStatus = async (req, res) => {
   try {
     const profile = await lspService.getLSPProfile(req.user.id);
-    const { status } = req.body;
+    const { status, notes } = req.body;
     
-    const booking = await lspService.updateBookingStatus(req.params.id, profile.id, status);
+    const booking = await lspService.updateBookingStatus(req.params.id, profile.id, status, notes);
     res.status(200).json(booking);
   } catch (error) {
     console.error('Update Booking Status Error:', error.message);
@@ -169,16 +167,62 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
+const approveBooking = async (req, res) => {
+  try {
+    const profile = await lspService.getLSPProfile(req.user.id);
+    const { approvalNotes } = req.body;
+    
+    const booking = await lspService.updateBookingStatus(req.params.id, profile.id, 'approved', approvalNotes);
+    res.status(200).json({
+      message: 'Booking approved successfully',
+      booking: booking
+    });
+  } catch (error) {
+    console.error('Approve Booking Error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const rejectBooking = async (req, res) => {
+  try {
+    const profile = await lspService.getLSPProfile(req.user.id);
+    const { rejectionReason } = req.body;
+    
+    if (!rejectionReason) {
+      return res.status(400).json({ error: 'Rejection reason is required' });
+    }
+    
+    const booking = await lspService.updateBookingStatus(req.params.id, profile.id, 'rejected', rejectionReason);
+    res.status(200).json({
+      message: 'Booking rejected successfully',
+      booking: booking
+    });
+  } catch (error) {
+    console.error('Reject Booking Error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const getPendingBookings = async (req, res) => {
+  try {
+    const profile = await lspService.getLSPProfile(req.user.id);
+    const bookings = await lspService.getPendingBookings(profile.id);
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error('Get Pending Bookings Error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+};
+
 // Shipment Management
 const getShipments = async (req, res) => {
   try {
-    const profile = await lspService.getLSPProfile(req.user.id);
     const filters = {
       status: req.query.status,
       booking_id: req.query.booking_id
     };
     
-    const shipments = await lspService.getShipments(profile.id, filters);
+    const shipments = await lspService.getShipments(req.user.lsp_id, filters);
     res.status(200).json(shipments);
   } catch (error) {
     console.error('Get Shipments Error:', error.message);
@@ -206,13 +250,12 @@ const updateShipmentStatus = async (req, res) => {
 // Complaint Management
 const getComplaints = async (req, res) => {
   try {
-    const profile = await lspService.getLSPProfile(req.user.id);
     const filters = {
       status: req.query.status,
       priority: req.query.priority
     };
     
-    const complaints = await lspService.getComplaints(profile.id, filters);
+    const complaints = await lspService.getComplaints(req.user.lsp_id, filters);
     res.status(200).json(complaints);
   } catch (error) {
     console.error('Get Complaints Error:', error.message);
@@ -274,6 +317,18 @@ const getContainerTypes = async (req, res) => {
   }
 };
 
+// Analytics & Performance Metrics
+const getLSPAnalytics = async (req, res) => {
+  try {
+    // Use lsp_id from JWT token directly
+    const analytics = await lspService.getLSPAnalytics(req.user.lsp_id);
+    res.json(analytics);
+  } catch (error) {
+    console.error('Get LSP Analytics Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   registerLSP,
   loginLSP,
@@ -287,11 +342,15 @@ module.exports = {
   getBookings,
   getBooking,
   updateBookingStatus,
+  approveBooking,
+  rejectBooking,
+  getPendingBookings,
   getShipments,
   updateShipmentStatus,
   getComplaints,
   resolveComplaint,
   getNotifications,
   markNotificationAsRead,
-  getContainerTypes
+  getContainerTypes,
+  getLSPAnalytics
 }; 

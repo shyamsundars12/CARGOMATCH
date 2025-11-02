@@ -1,0 +1,79 @@
+[2025-10-12T10:02:18.524Z] INFO: 🚀 Starting comprehensive Neon migration...
+[2025-10-12T10:02:18.525Z] INFO: Testing database connections...
+[2025-10-12T10:02:18.632Z] INFO: ✅ Local database connected successfully
+[2025-10-12T10:02:20.407Z] INFO: ✅ Neon database connected successfully
+[2025-10-12T10:02:20.408Z] INFO: Creating schema in Neon database...
+[2025-10-12T10:02:20.797Z] INFO: ✅ Schema created successfully in Neon
+[2025-10-12T10:02:20.797Z] INFO: Starting data migration...
+[2025-10-12T10:02:20.798Z] INFO: Migrating table: users
+[2025-10-12T10:02:21.029Z] WARN: ⚠️  Skipping row in users: column "password_hash" of relation "users" does not exist
+[2025-10-12T10:02:22.626Z] WARN: ⚠️  Skipping row in users: column "password_hash" of relation "users" does not exist
+[2025-10-12T10:02:24.216Z] WARN: ⚠️  Skipping row in users: column "password_hash" of relation "users" does not exist
+[2025-10-12T10:02:25.823Z] WARN: ⚠️  Skipping row in users: column "password_hash" of relation "users" does not exist
+[2025-10-12T10:02:25.824Z] INFO: ✅ Migrated 0/4 records from users
+[2025-10-12T10:02:25.825Z] INFO: Migrating table: lsp_profiles
+[2025-10-12T10:02:27.411Z] WARN: ⚠️  Skipping row in lsp_profiles: invalid input syntax for type integer: "550e8400-e29b-41d4-a716-446655440001"
+[2025-10-12T10:02:27.412Z] INFO: ✅ Migrated 0/1 records from lsp_profiles
+[2025-10-12T10:02:27.412Z] INFO: Migrating table: container_types
+[2025-10-12T10:02:29.020Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "189da3cc-9cb9-4fe8-9ff5-4ed8b8cc54ca"
+[2025-10-12T10:02:30.615Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "2b0e52d7-e7e5-4079-861b-92daee08a59f"
+[2025-10-12T10:02:32.210Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "1f0f4597-7a81-4dad-bf80-3bf5d017d648"
+[2025-10-12T10:02:33.803Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "6b6fd3f3-6dfb-43c7-abb9-7d1145fb95d2"
+[2025-10-12T10:02:35.409Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "b48273b4-f515-48b7-8a25-5bb0d4566354"
+[2025-10-12T10:02:37.063Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "49288f35-3efc-4f64-8f29-477329a5c487"
+[2025-10-12T10:02:38.660Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "f8b6e615-85e4-4da4-8ad5-98a372c20ea2"
+[2025-10-12T10:02:40.264Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "dc6edd6b-4ca1-4c0e-9ff4-780b32384c2a"
+[2025-10-12T10:02:41.859Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "333f8449-21a5-41fd-b8ea-6cde5fc62f48"
+[2025-10-12T10:02:43.440Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "b5cc0849-d5b5-4d3d-a5ca-6c6686f2bb5f"
+[2025-10-12T10:02:45.105Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "b5726d50-abb3-46d3-8f62-9ee54fead316"
+[2025-10-12T10:02:46.674Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "1b7b7ff5-be90-4031-aaa4-a3d0056e3ce6"
+[2025-10-12T10:02:48.260Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "0a688728-391d-469d-9601-a29314a86916"
+[2025-10-12T10:02:49.845Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "3ed71abf-2a67-4b4d-8ab6-dadc42f229e4"
+[2025-10-12T10:02:51.473Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "e095bb85-5248-4c89-a8bb-ed356b405872"
+[2025-10-12T10:02:53.328Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "6b8369ef-0251-48f8-bffa-a5bf70fdfc5e"
+[2025-10-12T10:02:54.892Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "7dca2d78-4069-4d6e-a3eb-e98a9751fb36"
+[2025-10-12T10:02:56.450Z] WARN: ⚠️  Skipping row in container_types: invalid input syntax for type integer: "36f3cb15-95c3-44d5-8ce0-6962bb8e7d63"
+[2025-10-12T10:02:56.450Z] INFO: ✅ Migrated 0/18 records from container_types
+[2025-10-12T10:02:56.451Z] INFO: Migrating table: containers
+[2025-10-12T10:02:58.096Z] WARN: ⚠️  Skipping row in containers: invalid input syntax for type integer: "6c49fd6a-ea1a-453c-b4d2-274d08e5493a"
+[2025-10-12T10:02:59.697Z] WARN: ⚠️  Skipping row in containers: invalid input syntax for type integer: "fd9eef9b-1b43-4366-b9cc-3df07ab949d6"
+[2025-10-12T10:03:01.296Z] WARN: ⚠️  Skipping row in containers: invalid input syntax for type integer: "bba64fc7-4e46-4f6a-ac7c-1ca2a6e41cf9"
+[2025-10-12T10:03:02.932Z] WARN: ⚠️  Skipping row in containers: invalid input syntax for type integer: "01e7b051-7205-4a24-aeac-836674f33a8f"
+[2025-10-12T10:03:04.509Z] WARN: ⚠️  Skipping row in containers: invalid input syntax for type integer: "113f18cb-bb4e-4bbb-b17a-e82f743a8441"
+[2025-10-12T10:03:06.086Z] WARN: ⚠️  Skipping row in containers: invalid input syntax for type integer: "1b548c56-0644-4edd-8b41-154c41656f0a"
+[2025-10-12T10:03:07.830Z] WARN: ⚠️  Skipping row in containers: invalid input syntax for type integer: "16ad3b89-603c-451e-81b6-45d8060cbf67"
+[2025-10-12T10:03:09.411Z] WARN: ⚠️  Skipping row in containers: invalid input syntax for type integer: "8867e246-e6b3-402c-a6dd-3de2d2ec9364"
+[2025-10-12T10:03:09.411Z] INFO: ✅ Migrated 0/8 records from containers
+[2025-10-12T10:03:09.412Z] INFO: Migrating table: bookings
+[2025-10-12T10:03:11.059Z] WARN: ⚠️  Skipping row in bookings: column "user_id" of relation "bookings" does not exist
+[2025-10-12T10:03:12.642Z] WARN: ⚠️  Skipping row in bookings: column "user_id" of relation "bookings" does not exist
+[2025-10-12T10:03:12.643Z] INFO: ✅ Migrated 0/2 records from bookings
+[2025-10-12T10:03:12.643Z] INFO: Migrating table: shipments
+[2025-10-12T10:03:14.232Z] WARN: ⚠️  Skipping row in shipments: column "user_id" of relation "shipments" does not exist
+[2025-10-12T10:03:15.848Z] WARN: ⚠️  Skipping row in shipments: column "user_id" of relation "shipments" does not exist
+[2025-10-12T10:03:15.848Z] INFO: ✅ Migrated 0/2 records from shipments
+[2025-10-12T10:03:15.849Z] INFO: Migrating table: shipment_status_history
+[2025-10-12T10:03:17.455Z] WARN: ⚠️  Skipping row in shipment_status_history: insert or update on table "shipment_status_history" violates foreign key constraint "shipment_status_history_shipment_id_fkey"
+[2025-10-12T10:03:19.034Z] WARN: ⚠️  Skipping row in shipment_status_history: insert or update on table "shipment_status_history" violates foreign key constraint "shipment_status_history_shipment_id_fkey"
+[2025-10-12T10:03:20.650Z] WARN: ⚠️  Skipping row in shipment_status_history: insert or update on table "shipment_status_history" violates foreign key constraint "shipment_status_history_shipment_id_fkey"
+[2025-10-12T10:03:20.650Z] INFO: ✅ Migrated 0/3 records from shipment_status_history
+[2025-10-12T10:03:20.650Z] INFO: Migrating table: complaints
+[2025-10-12T10:03:22.217Z] WARN: ⚠️  Skipping row in complaints: column "user_id" of relation "complaints" does not exist
+[2025-10-12T10:03:23.831Z] WARN: ⚠️  Skipping row in complaints: column "user_id" of relation "complaints" does not exist
+[2025-10-12T10:03:23.831Z] INFO: ✅ Migrated 0/2 records from complaints
+[2025-10-12T10:03:23.831Z] INFO: Migrating table: notifications
+[2025-10-12T10:03:23.833Z] INFO: ℹ️  No data found in notifications
+[2025-10-12T10:03:23.833Z] INFO: Creating indexes and constraints...
+[2025-10-12T10:03:25.466Z] INFO: ✅ Indexes created successfully
+[2025-10-12T10:03:25.467Z] INFO: Validating migration...
+[2025-10-12T10:03:25.691Z] INFO: ✅ Users: 0 records
+[2025-10-12T10:03:25.916Z] INFO: ✅ LSP Profiles: 0 records
+[2025-10-12T10:03:26.154Z] INFO: ✅ Container Types: 9 records
+[2025-10-12T10:03:26.379Z] INFO: ✅ Containers: 0 records
+[2025-10-12T10:03:26.605Z] INFO: ✅ Bookings: 0 records
+[2025-10-12T10:03:26.830Z] INFO: ✅ Shipments: 0 records
+[2025-10-12T10:03:27.054Z] INFO: ✅ Complaints: 0 records
+[2025-10-12T10:03:27.297Z] INFO: ✅ Notifications: 0 records
+[2025-10-12T10:03:27.297Z] INFO: Generating environment configuration...
+[2025-10-12T10:03:27.298Z] INFO: ✅ Environment configuration saved to .env.neon
+[2025-10-12T10:03:27.299Z] INFO: 🎉 Migration completed successfully!

@@ -3,9 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 const navItems = [
   { name: "Dashboard", path: "/admin/dashboard" },
   { name: "Users", path: "/admin/users" },
+  { name: "LSPs", path: "/admin/lsps" },
   { name: "Container Types", path: "/admin/container-types" },
   { name: "Containers", path: "/admin/containers" },
+  { name: "Container Approval", path: "/admin/container-approval" },
   { name: "Bookings", path: "/admin/bookings" },
+  { name: "Shipments", path: "/admin/shipments" },
+  { name: "Complaints", path: "/admin/complaints" },
 ];
 
 export default function AdminSidebar() {

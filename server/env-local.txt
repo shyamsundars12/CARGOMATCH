@@ -1,0 +1,18 @@
+# Local Database Configuration
+# Copy this to .env for local development
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=logisticsdb
+DB_USER=postgres
+DB_PASS=admin123
+DB_SSL=false
+
+# JWT Configuration
+JWT_SECRET=Hello@13
+
+# Admin Configuration
+ADMIN_EMAIL=admin@cargomatch.in
+ADMIN_PASSWORD=adminCargomatch123
+
+

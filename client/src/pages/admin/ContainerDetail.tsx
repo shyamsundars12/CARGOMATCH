@@ -11,9 +11,20 @@ export default function AdminContainerDetail() {
     fetch(`/api/admin/containers/${id}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
     })
-      .then((res) => res.json())
-      .then(setData)
-      .catch(() => setError("Failed to fetch container details"));
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((containerData) => {
+        // The API returns the container object directly, not wrapped in a container property
+        setData({ container: containerData, bookings: [] }); // Set empty bookings for now
+      })
+      .catch((err) => {
+        console.error('Error fetching container:', err);
+        setError("Failed to fetch container details");
+      });
   }, [id]);
 
   if (error) {
@@ -24,6 +35,11 @@ export default function AdminContainerDetail() {
   }
 
   const { container, bookings } = data;
+
+  // Safety check to ensure container exists
+  if (!container) {
+    return <div style={{ padding: 32, color: "red" }}>Container not found</div>;
+  }
 
   return (
     <div style={{ padding: 32 }}>

@@ -4,8 +4,11 @@ const navItems = [
   { name: "Dashboard", path: "/dashboard" },
   { name: "Profile", path: "/profile" },
   { name: "Containers", path: "/containers" },
+  { name: "Booking Approval", path: "/booking-approval" },
   { name: "Bookings", path: "/bookings" },
   { name: "Shipments", path: "/shipments" },
+  { name: "Complaints", path: "/complaints" },
+  { name: "Analytics", path: "/analytics" },
 ];
 
 export default function Sidebar() {

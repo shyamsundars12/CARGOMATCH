@@ -1,0 +1,57 @@
+# ===========================================
+# CargoMatch Environment Configuration
+# ===========================================
+
+# ===========================================
+# LOCAL DATABASE CONFIGURATION
+# ===========================================
+# Uncomment these for local development:
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=logisticsdb
+DB_USER=postgres
+DB_PASSWORD=admin123
+
+# ===========================================
+# NEON DATABASE CONFIGURATION
+# ===========================================
+# Uncomment these for Neon cloud database:
+# NEON_HOST=ep-muddy-bird-adpst8gp-pooler.c-2.us-east-1.aws.neon.tech
+# NEON_PORT=5432
+# NEON_DATABASE=logisticsdb
+# NEON_USER=neondb_owner
+# NEON_PASSWORD=npg_VFKU7kx4mXnS
+
+# ===========================================
+# JWT CONFIGURATION
+# ===========================================
+JWT_SECRET=Hello@13
+
+# ===========================================
+# ADMIN CONFIGURATION
+# ===========================================
+ADMIN_EMAIL=admin@cargomatch.in
+ADMIN_PASSWORD=adminCargomatch123
+
+# ===========================================
+# SWITCHING INSTRUCTIONS
+# ===========================================
+# To switch to LOCAL database:
+# 1. Uncomment the LOCAL DATABASE section above
+# 2. Comment out the NEON DATABASE section above
+# 3. Save the file
+#
+# To switch to NEON database:
+# 1. Comment out the LOCAL DATABASE section above
+# 2. Uncomment the NEON DATABASE section above
+# 3. Save the file
+
+
+
+
+
+
+
+
+
+

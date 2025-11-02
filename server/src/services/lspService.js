@@ -57,28 +57,24 @@ const loginLSP = async ({ email, password }) => {
     throw new Error("User not found");
   }
   
-  if (user.role !== 'lsp') {
+  // Check if user has an LSP profile (this indicates they are an LSP)
+  const lspProfile = await repo.getLSPProfileByUserId(user.id);
+  if (!lspProfile) {
     throw new Error("Access denied. LSP account required.");
   }
   
-  const isValidPassword = await bcrypt.compare(password, user.password);
+  const isValidPassword = await bcrypt.compare(password, user.password_hash);
   if (!isValidPassword) {
     throw new Error("Invalid password");
   }
   
-  // Check if LSP profile exists and is verified
-  const lspProfile = await repo.getLSPProfileByUserId(user.id);
-  if (!lspProfile) {
-    throw new Error("LSP profile not found");
-  }
-  console.log(lspProfile.is_verified);
+  // Check if LSP profile is verified
   if (!lspProfile.is_verified) {
-    console.log(lspProfile.is_verified);
     throw new Error("Account pending verification. Please contact admin.");
   }
   
   const token = jwt.sign(
-    { id: user.id, role: user.role, lsp_id: lspProfile.id }, 
+    { id: user.id, role: 'lsp', lsp_id: lspProfile.id }, 
     JWT_SECRET, 
     { expiresIn: '24h' }
   );
@@ -86,7 +82,7 @@ const loginLSP = async ({ email, password }) => {
   return {
     message: 'Login successful',
     token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    user: { id: user.id, name: lspProfile.name, email: user.email, role: 'lsp' },
     profile: lspProfile
   };
 };
@@ -110,10 +106,24 @@ const updateLSPProfile = async (profileId, updateData) => {
 // Container Management
 const createContainer = async (lspId, containerData) => {
   // Validate container data
-  const { container_number, size, type, origin_port, destination_port, departure_date, arrival_date, price_per_unit } = containerData;
+  const { container_number, size, type, origin_port, destination_port, departure_date, arrival_date, price_per_unit, length, width, height, weight } = containerData;
   
   if (!container_number || !size || !type || !origin_port || !destination_port || !departure_date || !arrival_date || !price_per_unit) {
     throw new Error("Missing required container information");
+  }
+  
+  // Validate dimensions if provided
+  if (length && (isNaN(length) || length <= 0)) {
+    throw new Error("Length must be a positive number");
+  }
+  if (width && (isNaN(width) || width <= 0)) {
+    throw new Error("Width must be a positive number");
+  }
+  if (height && (isNaN(height) || height <= 0)) {
+    throw new Error("Height must be a positive number");
+  }
+  if (weight && (isNaN(weight) || weight <= 0)) {
+    throw new Error("Weight must be a positive number");
   }
   
   if (new Date(departure_date) >= new Date(arrival_date)) {
@@ -169,23 +179,33 @@ const getBooking = async (bookingId, lspId) => {
   return booking;
 };
 
-const updateBookingStatus = async (bookingId, lspId, status) => {
-  const validStatuses = ['pending', 'approved', 'rejected', 'closed', 'cancelled'];
-  if (!validStatuses.includes(status)) {
+const updateBookingStatus = async (bookingId, lspId, status, notes = null) => {
+  // Normalize status input (handle both 'pending' and 'pending_approval')
+  let normalizedStatus = status.toLowerCase().trim();
+  if (normalizedStatus === 'pending_approval') {
+    normalizedStatus = 'pending';
+  }
+  
+  const validStatuses = ['pending', 'approved', 'rejected', 'confirmed', 'closed', 'cancelled'];
+  if (!validStatuses.includes(normalizedStatus)) {
     throw new Error("Invalid booking status");
   }
   
-  const booking = await repo.updateBookingStatus(bookingId, status, lspId);
+  const booking = await repo.updateBookingStatus(bookingId, normalizedStatus, lspId, notes);
   if (!booking) {
     throw new Error("Booking not found or access denied");
   }
   
   // If booking is approved, create shipment automatically
-  if (status === 'approved' && booking.is_auto_approved) {
+  if (normalizedStatus === 'approved' && booking.is_auto_approved) {
     await createShipmentFromBooking(booking);
   }
   
   return booking;
+};
+
+const getPendingBookings = async (lspId) => {
+  return await repo.getPendingBookings(lspId);
 };
 
 // Shipment Management
@@ -267,25 +287,47 @@ const getComplaints = async (lspId, filters = {}) => {
 const resolveComplaint = async (complaintId, lspId, resolutionData) => {
   const { status, resolution } = resolutionData;
   
-  const validStatuses = ['open', 'in_progress', 'resolved', 'closed'];
-  if (!validStatuses.includes(status)) {
-    throw new Error("Invalid complaint status");
+  // Validate required fields
+  if (!status) {
+    throw new Error("Status is required");
   }
   
-  const complaint = await repo.updateComplaintStatus(complaintId, status, resolution, lspId, lspId);
+  const validStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+  if (!validStatuses.includes(status)) {
+    throw new Error(`Invalid complaint status. Must be one of: ${validStatuses.join(', ')}`);
+  }
+  
+  // Resolution is required for resolved/closed status
+  if ((status === 'resolved' || status === 'closed') && (!resolution || !resolution.trim())) {
+    throw new Error("Resolution text is required when resolving or closing a complaint");
+  }
+  
+  // Get the user_id from the LSP profile for resolved_by
+  const lspProfile = await repo.getLSPProfileByLspId(lspId);
+  const userId = lspProfile?.user_id || null;
+  
+  const complaint = await repo.updateComplaintStatus(complaintId, status, resolution, userId, lspId);
   if (!complaint) {
     throw new Error("Complaint not found or access denied");
   }
   
-  // Create notification for complainant
-  await repo.createNotification({
-    user_id: complaint.complainant_id,
-    title: "Complaint Updated",
-    message: `Your complaint "${complaint.title}" has been ${status}`,
-    type: 'complaint_update',
-    related_entity_type: 'complaint',
-    related_entity_id: complaint.id
-  });
+  // Create notification for complainant (make it optional - don't fail if it doesn't work)
+  try {
+    const complainantId = complaint.user_id || complaint.complainant_id;
+    if (complainantId) {
+      await repo.createNotification({
+        user_id: complainantId,
+        title: "Complaint Updated",
+        message: `Your complaint "${complaint.title}" has been ${status}`,
+        type: 'complaint_update',
+        related_entity_type: 'complaint',
+        related_entity_id: complaint.id
+      });
+    }
+  } catch (notificationError) {
+    console.warn('Could not create notification for complaint resolution:', notificationError.message);
+    // Don't fail the whole operation if notification fails
+  }
   
   return complaint;
 };
@@ -312,6 +354,52 @@ const generateShipmentNumber = () => {
   return `SH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
+// Analytics & Performance Metrics
+const getLSPAnalytics = async (lspId) => {
+  try {
+    // Get container statistics
+    const containerStats = await repo.getContainerStats(lspId);
+    
+    // Get booking statistics
+    const bookingStats = await repo.getBookingStats(lspId);
+    
+    // Get shipment statistics
+    const shipmentStats = await repo.getShipmentStats(lspId);
+    
+    // Get revenue data
+    const revenueData = await repo.getRevenueData(lspId);
+    
+    // Get recent activity
+    const recentActivity = await repo.getRecentActivity(lspId);
+    
+    return {
+      containers: containerStats,
+      bookings: bookingStats,
+      shipments: shipmentStats,
+      revenue: revenueData,
+      recentActivity: recentActivity
+    };
+  } catch (error) {
+    throw new Error(`Failed to fetch analytics: ${error.message}`);
+  }
+};
+
+// Notification Management
+const createNotification = async (userId, title, message, type = 'info', relatedEntityType = null, relatedEntityId = null) => {
+  try {
+    return await repo.createNotification({
+      user_id: userId,
+      title,
+      message,
+      type,
+      related_entity_type: relatedEntityType,
+      related_entity_id: relatedEntityId
+    });
+  } catch (error) {
+    throw new Error(`Failed to create notification: ${error.message}`);
+  }
+};
+
 module.exports = {
   // Authentication & Profile
   registerLSP,
@@ -330,6 +418,7 @@ module.exports = {
   getBookings,
   getBooking,
   updateBookingStatus,
+  getPendingBookings,
   
   // Shipment Management
   getShipments,
@@ -346,5 +435,9 @@ module.exports = {
   
   // Utilities
   getContainerTypes,
-  generateShipmentNumber
+  generateShipmentNumber,
+  
+  // Analytics & Notifications
+  getLSPAnalytics,
+  createNotification
 }; 

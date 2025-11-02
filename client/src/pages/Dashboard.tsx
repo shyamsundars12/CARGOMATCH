@@ -8,23 +8,52 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    const adminToken = localStorage.getItem("adminToken");
+    
+    console.log("🔐 Dashboard - Token:", token ? "Present" : "Missing");
+    console.log("🔐 Dashboard - Admin Token:", adminToken ? "Present" : "Missing");
+    
+    if (!token && !adminToken) {
+      console.log("❌ No authentication token found");
+      return;
+    }
+    
+    // Determine which API to use based on token type
+    const apiPrefix = adminToken ? "/api/admin" : "/api/lsp";
+    const authToken = adminToken || token;
+    
+    console.log("🌐 Using API prefix:", apiPrefix);
+    
     // Fetch all counts in parallel
     Promise.all([
-      fetch("/api/lsp/containers", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      }).then(res => res.ok ? res.json() : []),
-      fetch("/api/lsp/bookings", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      }).then(res => res.ok ? res.json() : []),
-      fetch("/api/lsp/shipments", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      }).then(res => res.ok ? res.json() : []),
+      fetch(`${apiPrefix}/containers`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      }).then(res => {
+        console.log("📦 Containers response:", res.status);
+        return res.ok ? res.json() : [];
+      }),
+      fetch(`${apiPrefix}/bookings`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      }).then(res => {
+        console.log("📋 Bookings response:", res.status);
+        return res.ok ? res.json() : [];
+      }),
+      fetch(`${apiPrefix}/shipments`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      }).then(res => {
+        console.log("🚢 Shipments response:", res.status);
+        return res.ok ? res.json() : [];
+      }),
     ]).then(([containers, bookings, shipments]) => {
+      console.log("📊 Dashboard data:", { containers, bookings, shipments });
       setStats({
         containers: Array.isArray(containers) ? containers.length : 0,
         bookings: Array.isArray(bookings) ? bookings.length : 0,
         shipments: Array.isArray(shipments) ? shipments.length : 0,
       });
+    }).catch(error => {
+      console.error("❌ Dashboard fetch error:", error);
     });
   }, []);
 
