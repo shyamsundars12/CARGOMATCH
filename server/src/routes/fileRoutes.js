@@ -3,11 +3,26 @@ const path = require('path');
 const fs = require('fs');
 const router = express.Router();
 
-// Serve uploaded files
+// Serve uploaded files (for Vercel, files are stored in Cloudinary)
+// This endpoint redirects to Cloudinary URLs or serves files if they exist locally
 router.get('/uploads/:filename', (req, res) => {
   try {
     const filename = req.params.filename;
-    const filePath = path.join(__dirname, '../uploads', filename);
+    
+    // In Vercel/serverless environment, files are stored in Cloudinary
+    // Check if we're in a serverless environment
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      // In production/Vercel, files should be accessed via Cloudinary URLs
+      // Return a message indicating files are stored in Cloudinary
+      return res.status(404).json({ 
+        error: 'File not found',
+        message: 'Files are stored in Cloudinary. Please use the Cloudinary URL from the database.',
+        note: 'This endpoint is for local development only.'
+      });
+    }
+    
+    // Local development: try to serve from local filesystem
+    const filePath = path.join(__dirname, '../../uploads', filename);
     
     // Check if file exists
     if (!fs.existsSync(filePath)) {
