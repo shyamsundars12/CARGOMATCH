@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getApiUrl } from '../config/api';
 
 export default function Complaints() {
   const [complaints, setComplaints] = useState<any[]>([]);
@@ -13,7 +14,7 @@ export default function Complaints() {
   const fetchComplaints = () => {
     setLoading(true);
     setError('');
-    fetch('/api/lsp/complaints', {
+    fetch(getApiUrl('/api/lsp/complaints'), {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     })
       .then(res => {
@@ -50,7 +51,7 @@ export default function Complaints() {
     }
     
     try {
-      const res = await fetch(`/api/lsp/complaints/${selectedComplaint.id}/resolve`, {
+      const res = await fetch(getApiUrl(`/api/lsp/complaints/${selectedComplaint.id}/resolve`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -169,7 +170,7 @@ export default function Complaints() {
             } else {
               setLoading(true);
               setError('');
-              fetch(`/api/lsp/complaints?status=${status}`, {
+              fetch(getApiUrl(`/api/lsp/complaints?status=${status}`), {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
               })
                 .then(res => {

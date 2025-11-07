@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { getApiUrl } from '../config/api';
 
 export default function ComplaintDetail() {
   const { id } = useParams();
@@ -11,7 +12,7 @@ export default function ComplaintDetail() {
   useEffect(() => {
     if (!id) return;
     
-    fetch(`/api/lsp/complaints/${id}`, {
+    fetch(getApiUrl(`/api/lsp/complaints/${id}`), {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     })
       .then(res => {
