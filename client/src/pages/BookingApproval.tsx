@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getFileUrl } from '../config/api';
 
 export default function BookingApproval() {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -236,13 +237,14 @@ export default function BookingApproval() {
     } 
     // Check if it's a local uploads path
     else if (filePath.startsWith('/uploads/')) {
-      pdfUrl = `http://localhost:5000${filePath}`;
+      // In production, files are in Cloudinary, so this shouldn't happen
+      // But handle it gracefully
+      pdfUrl = getFileUrl(filePath);
       setPdfLoading(true);
     }
     // Regular file path - convert to URL
     else {
-      const cleanPath = filePath.replace(/\\\\/g, "/").replace(/\\/g, "/");
-      pdfUrl = `http://localhost:5000/${cleanPath}`;
+      pdfUrl = getFileUrl(filePath);
       setPdfLoading(true);
     }
     

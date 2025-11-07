@@ -35,6 +35,7 @@ import {
 } from "@mui/icons-material";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getFileUrl } from "../../config/api";
 
 export default function AdminLSPDetail() {
   const { id } = useParams();
@@ -182,17 +183,11 @@ export default function AdminLSPDetail() {
 
     let pdfUrl: string;
 
-    // Check if it's a local uploads path
-    if (filePath.startsWith('uploads/')) {
-      pdfUrl = `http://localhost:5000/${filePath.replace(/\\/g, '/')}`;
-    } else if (filePath.startsWith('/uploads/')) {
-      pdfUrl = `http://localhost:5000${filePath}`;
-    } else if (filePath.includes('cloudinary.com')) {
+    // Use the centralized file URL helper
+    if (filePath.includes('cloudinary.com')) {
       pdfUrl = filePath;
     } else {
-      // Regular file path - convert to URL
-      const cleanPath = filePath.replace(/\\\\/g, "/").replace(/\\/g, "/");
-      pdfUrl = `http://localhost:5000/${cleanPath}`;
+      pdfUrl = getFileUrl(filePath);
     }
 
     console.log('PDF URL:', pdfUrl);

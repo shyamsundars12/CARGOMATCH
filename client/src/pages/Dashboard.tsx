@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getApiUrl } from "../config/api";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -27,19 +28,19 @@ export default function Dashboard() {
     
     // Fetch all counts in parallel
     Promise.all([
-      fetch(`${apiPrefix}/containers`, {
+      fetch(getApiUrl(`${apiPrefix}/containers`), {
         headers: { Authorization: `Bearer ${authToken}` },
       }).then(res => {
         console.log("📦 Containers response:", res.status);
         return res.ok ? res.json() : [];
       }),
-      fetch(`${apiPrefix}/bookings`, {
+      fetch(getApiUrl(`${apiPrefix}/bookings`), {
         headers: { Authorization: `Bearer ${authToken}` },
       }).then(res => {
         console.log("📋 Bookings response:", res.status);
         return res.ok ? res.json() : [];
       }),
-      fetch(`${apiPrefix}/shipments`, {
+      fetch(getApiUrl(`${apiPrefix}/shipments`), {
         headers: { Authorization: `Bearer ${authToken}` },
       }).then(res => {
         console.log("🚢 Shipments response:", res.status);

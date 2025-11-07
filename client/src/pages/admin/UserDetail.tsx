@@ -35,6 +35,7 @@ import {
 } from "@mui/icons-material";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getFileUrl } from "../../config/api";
 
 export default function AdminUserDetail() {
   const { id } = useParams();
@@ -167,14 +168,9 @@ export default function AdminUserDetail() {
       const docType = title.toLowerCase().replace(' document', '').replace(' ', '-');
       pdfUrl = `/api/files/mobile-files/${userId}/${docType}`;
     } 
-    // Check if it's a local uploads path
-    else if (filePath.startsWith('/uploads/')) {
-      pdfUrl = `http://localhost:5000${filePath}`;
-    }
-    // Regular file path - convert to URL
+    // Check if it's a local uploads path or regular file path
     else {
-      const cleanPath = filePath.replace(/\\\\/g, "/").replace(/\\/g, "/");
-      pdfUrl = `http://localhost:5000/${cleanPath}`;
+      pdfUrl = getFileUrl(filePath);
     }
     
     console.log('PDF URL:', pdfUrl); // Debug log

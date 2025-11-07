@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getFileUrl } from "../config/api";
 
 export default function Profile() {
   const [profile, setProfile] = useState<any>(null);
@@ -42,9 +43,7 @@ export default function Profile() {
 
   const getPdfUrl = (filePath: string) => {
     if (!filePath) return null;
-    // Convert Windows path to URL format
-    const cleanPath = filePath.replace(/\\\\/g, '/').replace(/\\/g, '/');
-    return `http://localhost:5000/${cleanPath}`;
+    return getFileUrl(filePath);
   };
 
   const renderPdfViewer = (title: string, filePath: string) => {
