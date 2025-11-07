@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getApiUrl } from "../../config/api";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -10,7 +11,7 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       // Fetch basic stats
-      const statsRes = await fetch("/api/admin/dashboard", {
+      const statsRes = await fetch(getApiUrl("/api/admin/dashboard"), {
         headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
       });
       const statsData = await statsRes.json();
@@ -18,19 +19,19 @@ export default function AdminDashboard() {
 
       // Fetch detailed analytics
       const [lspsRes, containersRes, bookingsRes, shipmentsRes, complaintsRes] = await Promise.all([
-        fetch("/api/admin/lsps", {
+        fetch(getApiUrl("/api/admin/lsps"), {
           headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
         }),
-        fetch("/api/admin/containers", {
+        fetch(getApiUrl("/api/admin/containers"), {
           headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
         }),
-        fetch("/api/admin/bookings", {
+        fetch(getApiUrl("/api/admin/bookings"), {
           headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
         }),
-        fetch("/api/admin/shipments", {
+        fetch(getApiUrl("/api/admin/shipments"), {
           headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
         }),
-        fetch("/api/admin/complaints", {
+        fetch(getApiUrl("/api/admin/complaints"), {
           headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
         })
       ]);
