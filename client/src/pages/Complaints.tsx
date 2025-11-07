@@ -12,12 +12,30 @@ export default function Complaints() {
 
   const fetchComplaints = () => {
     setLoading(true);
+    setError('');
     fetch('/api/lsp/complaints', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     })
-      .then(res => res.json())
-      .then(setComplaints)
-      .catch(() => setError('Failed to fetch complaints'))
+      .then(res => {
+        if (!res.ok) {
+          return res.json().then(err => {
+            throw new Error(err.error || `Failed to fetch complaints (${res.status})`);
+          });
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) {
+          setComplaints(data);
+        } else {
+          setComplaints([]);
+          setError('Invalid data format received from server');
+        }
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to fetch complaints');
+        setComplaints([]);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -61,7 +79,11 @@ export default function Complaints() {
       setShowResponseModal(false);
       setSelectedComplaint(null);
       setResponse('');
-      alert('Response submitted successfully!');
+      
+      // Refresh complaints to get updated data
+      fetchComplaints();
+      
+      alert('Resolution comment submitted successfully!');
     } catch (err: any) {
       alert(err.message);
     }
@@ -145,11 +167,32 @@ export default function Complaints() {
             if (status === 'all') {
               fetchComplaints();
             } else {
+              setLoading(true);
+              setError('');
               fetch(`/api/lsp/complaints?status=${status}`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
               })
-                .then(res => res.json())
-                .then(setComplaints);
+                .then(res => {
+                  if (!res.ok) {
+                    return res.json().then(err => {
+                      throw new Error(err.error || `Failed to fetch complaints (${res.status})`);
+                    });
+                  }
+                  return res.json();
+                })
+                .then(data => {
+                  if (Array.isArray(data)) {
+                    setComplaints(data);
+                  } else {
+                    setComplaints([]);
+                    setError('Invalid data format received from server');
+                  }
+                })
+                .catch((err) => {
+                  setError(err.message || 'Failed to fetch complaints');
+                  setComplaints([]);
+                })
+                .finally(() => setLoading(false));
             }
           }}
           style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd' }}
@@ -176,7 +219,7 @@ export default function Complaints() {
           </tr>
         </thead>
         <tbody>
-          {complaints.map((c) => (
+          {Array.isArray(complaints) && complaints.map((c) => (
             <tr key={c.id} style={{ backgroundColor: '#f9f9f9' }}>
               <td style={tdStyle}>{c.id}</td>
               <td style={tdStyle}>
@@ -195,6 +238,16 @@ export default function Complaints() {
                 <div style={{ fontSize: '12px', color: '#666', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {c.description}
                 </div>
+                {c.resolution && (
+                  <div style={{ 
+                    fontSize: '11px', 
+                    color: '#10b981', 
+                    marginTop: 4,
+                    fontWeight: 500
+                  }}>
+                    ✓ Resolution provided
+                  </div>
+                )}
               </td>
               <td style={tdStyle}>
                 <div>
@@ -248,7 +301,7 @@ export default function Complaints() {
       {showResponseModal && (
         <div style={modalOverlay}>
           <div style={modalContent}>
-            <h3 style={{ marginBottom: 20 }}>Respond to Complaint</h3>
+            <h3 style={{ marginBottom: 20 }}>Add Resolution Comment</h3>
             
             <div style={{ marginBottom: 16, padding: 16, background: '#f8f9fa', borderRadius: 8 }}>
               <h4 style={{ marginBottom: 8, fontSize: 14, fontWeight: 600 }}>Complaint Details</h4>
@@ -264,14 +317,25 @@ export default function Complaints() {
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Your Response</label>
+              <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Resolution Comment</label>
+              <p style={{ fontSize: '12px', color: '#666', marginBottom: 8 }}>
+                Provide a detailed resolution comment that will be visible to the complainant.
+              </p>
               <textarea
                 value={response}
                 onChange={(e) => setResponse(e.target.value)}
-                placeholder="Enter your response to the complaint..."
+                placeholder="Enter your resolution comment explaining how you've addressed the complaint..."
                 style={{ ...inputStyle, height: '120px', resize: 'vertical' }}
               />
             </div>
+            {selectedComplaint?.resolution && (
+              <div style={{ marginBottom: 16, padding: 12, background: '#f0f9ff', borderRadius: 4, borderLeft: '3px solid #3b82f6' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#3b82f6', marginBottom: 4 }}>Previous Resolution:</div>
+                <div style={{ fontSize: '13px', color: '#333', whiteSpace: 'pre-wrap' }}>
+                  {selectedComplaint.resolution}
+                </div>
+              </div>
+            )}
             
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button
@@ -289,7 +353,7 @@ export default function Complaints() {
                   border: 'none'
                 }}
               >
-                Submit Response
+                Submit Resolution
               </button>
             </div>
           </div>

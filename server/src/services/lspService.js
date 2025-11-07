@@ -313,7 +313,7 @@ const resolveComplaint = async (complaintId, lspId, resolutionData) => {
   
   // Create notification for complainant (make it optional - don't fail if it doesn't work)
   try {
-    const complainantId = complaint.user_id || complaint.complainant_id;
+    const complainantId = complaint.user_id;
     if (complainantId) {
       await repo.createNotification({
         user_id: complainantId,

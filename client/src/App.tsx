@@ -12,6 +12,7 @@ import BookingApproval from './pages/BookingApproval';
 import Shipments from './pages/Shipments';
 import ShipmentDetail from './pages/ShipmentDetail';
 import Complaints from './pages/Complaints';
+import ComplaintDetail from './pages/ComplaintDetail';
 import Analytics from './pages/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/MainLayout';
@@ -74,6 +75,7 @@ function App() {
           <Route path="shipments" element={<Shipments />} />
           <Route path="shipments/:id" element={<ShipmentDetail />} />
           <Route path="complaints" element={<Complaints />} />
+          <Route path="complaints/:id" element={<ComplaintDetail />} />
           <Route path="analytics" element={<Analytics />} />
         </Route>
 

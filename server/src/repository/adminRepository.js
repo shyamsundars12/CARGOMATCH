@@ -322,11 +322,12 @@ exports.rejectUser = async (userId, adminId, rejectionReason) => {
     SET is_active = false,
         approval_status = 'rejected',
         verification_status = 'rejected',
+        rejection_reason = $1,
         updated_at = CURRENT_TIMESTAMP
-    WHERE id = $1 AND role != 'ADMIN'
+    WHERE id = $2 AND role != 'ADMIN'
     RETURNING *
   `;
-  const result = await db.query(query, [userId]);
+  const result = await db.query(query, [rejectionReason, userId]);
   return result.rows[0];
 };
 
@@ -335,7 +336,7 @@ exports.fetchUserById = async (userId) => {
     SELECT u.id, u.first_name || ' ' || u.last_name as name, u.email, 
            u.is_active as is_approved, u.created_at, u.updated_at,
            u.company_name, u.gst_number, u.pan_number, u.phone_number, u.address,
-           u.verification_status, u.city, u.state,
+           u.verification_status, u.city, u.state, u.approval_status, u.rejection_reason,
            CASE WHEN lp.id IS NOT NULL THEN 'lsp' ELSE 'trader' END as role
     FROM users u
     LEFT JOIN lsp_profiles lp ON u.id = lp.user_id
@@ -670,10 +671,11 @@ exports.rejectLSP = async (lspId, reason, adminId) => {
     await client.query(
       `UPDATE lsp_profiles 
        SET is_verified = false, 
-           verification_status = $1, 
+           verification_status = $1,
+           rejection_reason = $2, 
            updated_at = NOW() 
-       WHERE id = $2`,
-      ['rejected', lspId]
+       WHERE id = $3`,
+      ['rejected', reason, lspId]
     );
     
     await client.query('COMMIT');

@@ -198,6 +198,22 @@ export default function BookingDetail() {
               </div>
             )}
           </div>
+          {booking.rejection_reason && booking.status?.toLowerCase() === 'rejected' && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: 4, fontWeight: 600 }}>Rejection Reason</div>
+              <div style={{ 
+                fontSize: '14px', 
+                padding: 12, 
+                background: '#fee', 
+                borderRadius: 4, 
+                whiteSpace: 'pre-wrap',
+                border: '1px solid #fcc',
+                color: '#c33'
+              }}>
+                {booking.rejection_reason}
+              </div>
+            </div>
+          )}
           {booking.notes && (
             <div style={{ marginTop: 16 }}>
               <div style={{ fontSize: '12px', color: '#666', marginBottom: 4 }}>Notes</div>

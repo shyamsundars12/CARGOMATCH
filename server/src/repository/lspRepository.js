@@ -383,21 +383,27 @@ exports.updateBookingStatus = async (bookingId, status, lspId = null, notes = nu
     SET status = $1, updated_at = CURRENT_TIMESTAMP
   `;
   
-  const params = [status, bookingId];
-  let paramCount = 2;
+  const params = [status];
+  let paramCount = 1;
   
-  // Note: approved_at and closed_at columns don't exist in current schema
-  // If needed, add them to the database schema first
-  // For now, we just update the status
-  
-  if (notes) {
+  // Store rejection reason when status is rejected
+  if (status.toLowerCase() === 'rejected' && notes) {
+    paramCount++;
+    query += `, rejection_reason = $${paramCount}`;
+    params.push(notes);
+  } else if (notes) {
+    // For other statuses, store in notes
     paramCount++;
     query += `, notes = $${paramCount}`;
     params.push(notes);
   }
   
-  query += ` WHERE id = $2`;
+  // Add bookingId parameter
+  paramCount++;
+  params.push(bookingId);
+  query += ` WHERE id = $${paramCount}`;
   
+  // Add lspId parameter if provided
   if (lspId) {
     paramCount++;
     query += ` AND container_id IN (SELECT id FROM containers WHERE lsp_id = $${paramCount})`;
@@ -539,41 +545,57 @@ exports.updateShipmentStatus = async (shipmentId, status, location, description,
 
 // Complaint Management
 exports.getComplaintsByLSP = async (lspId, filters = {}) => {
-  let query = `
-    SELECT c.*, b.booking_date, cont.container_number,
-           u.first_name || ' ' || u.last_name as complainant_name, u.email as complainant_email
-    FROM complaints c
-    LEFT JOIN bookings b ON c.booking_id = b.id
-    LEFT JOIN containers cont ON b.container_id = cont.id
-    LEFT JOIN users u ON COALESCE(c.user_id, c.complainant_id) = u.id
-    WHERE c.lsp_id = $1
-  `;
-  
-  const params = [lspId];
-  let paramCount = 1;
-  
-  if (filters.status) {
-    paramCount++;
-    query += ` AND c.status = $${paramCount}`;
-    params.push(filters.status);
+  try {
+    let query = `
+      SELECT c.*, b.booking_date, cont.container_number,
+             CASE 
+               WHEN u.first_name IS NOT NULL AND u.last_name IS NOT NULL 
+                 THEN u.first_name || ' ' || u.last_name
+               WHEN u.first_name IS NOT NULL THEN u.first_name
+               WHEN u.last_name IS NOT NULL THEN u.last_name
+               WHEN u.email IS NOT NULL THEN u.email
+               ELSE 'Unknown User'
+             END as complainant_name, 
+             COALESCE(u.email, 'No email') as complainant_email
+      FROM complaints c
+      LEFT JOIN bookings b ON c.booking_id = b.id
+      LEFT JOIN containers cont ON b.container_id = cont.id
+      LEFT JOIN users u ON c.user_id = u.id
+      WHERE c.lsp_id = $1
+    `;
+    
+    const params = [lspId];
+    let paramCount = 1;
+    
+    if (filters.status) {
+      paramCount++;
+      query += ` AND c.status = $${paramCount}`;
+      params.push(filters.status);
+    }
+    
+    if (filters.priority) {
+      paramCount++;
+      query += ` AND c.priority = $${paramCount}`;
+      params.push(filters.priority);
+    }
+    
+    query += ` ORDER BY c.created_at DESC`;
+    
+    console.log('Executing getComplaintsByLSP query:', { lspId, filters, queryParams: params });
+    const result = await db.query(query, params);
+    console.log(`Found ${result.rows.length} complaints for LSP ${lspId}`);
+    return result.rows;
+  } catch (error) {
+    console.error('Error in getComplaintsByLSP:', error);
+    console.error('Query parameters:', { lspId, filters });
+    throw error;
   }
-  
-  if (filters.priority) {
-    paramCount++;
-    query += ` AND c.priority = $${paramCount}`;
-    params.push(filters.priority);
-  }
-  
-  query += ` ORDER BY c.created_at DESC`;
-  
-  const result = await db.query(query, params);
-  return result.rows;
 };
 
 exports.updateComplaintStatus = async (complaintId, status, resolution, resolvedBy, lspId) => {
   // First check if complaint exists and belongs to this LSP
   const checkQuery = `
-    SELECT id, user_id, complainant_id, lsp_id, title, status
+    SELECT id, user_id, lsp_id, title, status
     FROM complaints
     WHERE id = $1 AND lsp_id = $2
   `;
@@ -586,17 +608,20 @@ exports.updateComplaintStatus = async (complaintId, status, resolution, resolved
   
   const complaint = checkResult.rows[0];
   
-  // Update complaint - handle resolved_by column (may or may not exist)
-  // First try with resolved_by, if it fails, try without it
-  let updateQuery = `
+  // Update complaint - handle resolution and resolved_by columns (may or may not exist)
+  // Try with resolution first, if it fails, try without it
+  let updateQuery;
+  let params;
+  
+  // Try with resolution column first
+  updateQuery = `
     UPDATE complaints 
     SET status = $1, resolution = $2, resolved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
   `;
   
-  let params = [status, resolution];
+  params = [status, resolution || ''];
   
-  // Add resolved_by if provided (check if column exists in schema)
-  // For now, we'll try to add it and let the database tell us if it doesn't exist
+  // Add resolved_by if provided
   if (resolvedBy) {
     updateQuery += `, resolved_by = $3`;
     params.push(resolvedBy);
@@ -613,8 +638,56 @@ exports.updateComplaintStatus = async (complaintId, status, resolution, resolved
   try {
     result = await db.query(updateQuery, params);
   } catch (error) {
-    // If resolved_by column doesn't exist, try without it
-    if (error.message && error.message.includes('resolved_by')) {
+    console.log('First update attempt failed:', error.message);
+    
+    // If resolution column doesn't exist, try without it
+    if (error.message && error.message.includes('resolution')) {
+      console.log('resolution column does not exist, updating without it');
+      updateQuery = `
+        UPDATE complaints 
+        SET status = $1, resolved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      `;
+      params = [status];
+      
+      if (resolvedBy) {
+        updateQuery += `, resolved_by = $2`;
+        params.push(resolvedBy);
+        params.push(complaintId);
+        params.push(lspId);
+        updateQuery += ` WHERE id = $3 AND lsp_id = $4 RETURNING *`;
+      } else {
+        params.push(complaintId);
+        params.push(lspId);
+        updateQuery += ` WHERE id = $2 AND lsp_id = $3 RETURNING *`;
+      }
+      
+      try {
+        result = await db.query(updateQuery, params);
+        // Add resolution to result manually since column doesn't exist
+        if (result.rows.length > 0 && resolution) {
+          result.rows[0].resolution = resolution;
+        }
+      } catch (secondError) {
+        // If resolved_by also doesn't exist, try without both
+        if (secondError.message && secondError.message.includes('resolved_by')) {
+          console.log('resolved_by column also does not exist, updating with status only');
+          updateQuery = `
+            UPDATE complaints 
+            SET status = $1, resolved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2 AND lsp_id = $3
+            RETURNING *
+          `;
+          result = await db.query(updateQuery, [status, complaintId, lspId]);
+          // Add resolution to result manually
+          if (result.rows.length > 0 && resolution) {
+            result.rows[0].resolution = resolution;
+          }
+        } else {
+          throw secondError;
+        }
+      }
+    } else if (error.message && error.message.includes('resolved_by')) {
+      // If only resolved_by doesn't exist, retry without it but with resolution
       console.log('resolved_by column does not exist, updating without it');
       updateQuery = `
         UPDATE complaints 
@@ -622,7 +695,7 @@ exports.updateComplaintStatus = async (complaintId, status, resolution, resolved
         WHERE id = $3 AND lsp_id = $4
         RETURNING *
       `;
-      result = await db.query(updateQuery, [status, resolution, complaintId, lspId]);
+      result = await db.query(updateQuery, [status, resolution || '', complaintId, lspId]);
     } else {
       throw error;
     }
@@ -632,12 +705,7 @@ exports.updateComplaintStatus = async (complaintId, status, resolution, resolved
     return null;
   }
   
-  // Return complaint with both user_id and complainant_id for compatibility
-  const updatedComplaint = result.rows[0];
-  updatedComplaint.complainant_id = updatedComplaint.user_id || updatedComplaint.complainant_id;
-  updatedComplaint.user_id = updatedComplaint.complainant_id || updatedComplaint.user_id;
-  
-  return updatedComplaint;
+  return result.rows[0];
 };
 
 // Notification Management

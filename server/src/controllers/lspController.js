@@ -1,5 +1,6 @@
 const lspService = require('../services/lspService');
 const path = require('path');
+const db = require('../config/db');
 
 // LSP Authentication & Profile Management
 const registerLSP = async (req, res) => {
@@ -250,16 +251,91 @@ const updateShipmentStatus = async (req, res) => {
 // Complaint Management
 const getComplaints = async (req, res) => {
   try {
+    // Debug: Log user info
+    console.log('Get Complaints - User info:', {
+      hasUser: !!req.user,
+      userId: req.user?.id,
+      role: req.user?.role,
+      lspId: req.user?.lsp_id
+    });
+
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required. Please log in again.' });
+    }
+
+    if (!req.user.lsp_id) {
+      // If lsp_id is missing from token, try to fetch it from the database
+      console.log('lsp_id missing from token, fetching from database...');
+      try {
+        const lspProfile = await db.query(
+          'SELECT id FROM lsp_profiles WHERE user_id = $1',
+          [req.user.id]
+        );
+        
+        if (lspProfile.rows.length === 0) {
+          return res.status(400).json({ error: 'LSP profile not found. Please contact admin.' });
+        }
+        
+        req.user.lsp_id = lspProfile.rows[0].id;
+      } catch (dbError) {
+        console.error('Error fetching LSP profile:', dbError);
+        return res.status(400).json({ error: 'Failed to retrieve LSP information. Please log out and log in again.' });
+      }
+    }
+
     const filters = {
       status: req.query.status,
       priority: req.query.priority
     };
     
     const complaints = await lspService.getComplaints(req.user.lsp_id, filters);
+    
+    // Ensure we always return an array
+    if (!Array.isArray(complaints)) {
+      console.error('getComplaints returned non-array:', complaints);
+      return res.status(200).json([]);
+    }
+    
     res.status(200).json(complaints);
   } catch (error) {
     console.error('Get Complaints Error:', error.message);
-    res.status(400).json({ error: error.message });
+    console.error('Error stack:', error.stack);
+    res.status(400).json({ error: error.message || 'Failed to fetch complaints' });
+  }
+};
+
+const getComplaint = async (req, res) => {
+  try {
+    if (!req.user || !req.user.lsp_id) {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Authentication required. Please log in again.' });
+      }
+      
+      // Try to fetch lsp_id from database
+      const lspProfile = await db.query(
+        'SELECT id FROM lsp_profiles WHERE user_id = $1',
+        [req.user.id]
+      );
+      
+      if (lspProfile.rows.length === 0) {
+        return res.status(400).json({ error: 'LSP profile not found. Please contact admin.' });
+      }
+      
+      req.user.lsp_id = lspProfile.rows[0].id;
+    }
+
+    const complaintId = req.params.id;
+    const complaints = await lspService.getComplaints(req.user.lsp_id, {});
+    const complaint = complaints.find(c => c.id == complaintId); // Use == for type coercion
+    
+    if (!complaint) {
+      return res.status(404).json({ error: 'Complaint not found or access denied' });
+    }
+    
+    res.status(200).json(complaint);
+  } catch (error) {
+    console.error('Get Complaint Error:', error.message);
+    res.status(400).json({ error: error.message || 'Failed to fetch complaint' });
   }
 };
 
@@ -348,6 +424,7 @@ module.exports = {
   getShipments,
   updateShipmentStatus,
   getComplaints,
+  getComplaint,
   resolveComplaint,
   getNotifications,
   markNotificationAsRead,
