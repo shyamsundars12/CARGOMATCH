@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getApiUrl } from '../config/api';
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -69,7 +70,7 @@ export default function Register() {
       formData.append('business_license_doc', files.business_license_doc);
       formData.append('insurance_certificate_doc', files.insurance_certificate_doc);
 
-      const res = await fetch('/api/lsp/register', {
+      const res = await fetch(getApiUrl('/api/lsp/register'), {
         method: 'POST',
         body: formData, // Don't set Content-Type header for FormData
       });

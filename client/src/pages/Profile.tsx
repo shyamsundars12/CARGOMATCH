@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getFileUrl, getApiUrl } from "../config/api";
 
 export default function Profile() {
   const [profile, setProfile] = useState<any>(null);
@@ -7,7 +8,7 @@ export default function Profile() {
   const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/lsp/profile", {
+    fetch(getApiUrl("/api/lsp/profile"), {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     })
       .then(res => res.json())
@@ -28,7 +29,7 @@ export default function Profile() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage("");
-    const res = await fetch("/api/lsp/profile", {
+    const res = await fetch(getApiUrl("/api/lsp/profile"), {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -42,9 +43,7 @@ export default function Profile() {
 
   const getPdfUrl = (filePath: string) => {
     if (!filePath) return null;
-    // Convert Windows path to URL format
-    const cleanPath = filePath.replace(/\\\\/g, '/').replace(/\\/g, '/');
-    return `http://localhost:5000/${cleanPath}`;
+    return getFileUrl(filePath);
   };
 
   const renderPdfViewer = (title: string, filePath: string) => {

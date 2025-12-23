@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const lspController = require('../controllers/lspController');
-const { verifyToken } = require('../middlewares/authMiddleware');
+const { verifyToken, verifyLSP } = require('../middlewares/authMiddleware');
 const multer = require('multer');
 const path = require('path');
 
@@ -25,7 +25,7 @@ const upload = multer({
   }
 });
 
-// LSP Authentication & Profile Management
+// LSP Authentication & Profile Management (Public routes)
 router.post('/register', upload.fields([
   { name: 'gst_certificate', maxCount: 1 },
   { name: 'company_registration_doc', maxCount: 1 },
@@ -34,8 +34,9 @@ router.post('/register', upload.fields([
 ]), lspController.registerLSP);
 router.post('/login', lspController.loginLSP);
 
-// Protected routes - require authentication
+// Protected routes - require authentication and verification
 router.use(verifyToken);
+router.use(verifyLSP);
 
 // Profile Management
 router.get('/profile', lspController.getLSPProfile);
@@ -49,9 +50,12 @@ router.put('/containers/:id', lspController.updateContainer);
 router.delete('/containers/:id', lspController.deleteContainer);
 
 // Booking Management
+router.get('/bookings/pending', lspController.getPendingBookings);
 router.get('/bookings', lspController.getBookings);
 router.get('/bookings/:id', lspController.getBooking);
 router.put('/bookings/:id/status', lspController.updateBookingStatus);
+router.put('/bookings/:id/approve', lspController.approveBooking);
+router.put('/bookings/:id/reject', lspController.rejectBooking);
 
 // Shipment Management
 router.get('/shipments', lspController.getShipments);
@@ -67,5 +71,8 @@ router.put('/notifications/:id/read', lspController.markNotificationAsRead);
 
 // Utility endpoints
 router.get('/container-types', lspController.getContainerTypes);
+
+// Analytics & Performance Metrics
+router.get('/analytics', lspController.getLSPAnalytics);
 
 module.exports = router; 

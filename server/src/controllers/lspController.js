@@ -1,5 +1,6 @@
 const lspService = require('../services/lspService');
 const path = require('path');
+const db = require('../config/db');
 
 // LSP Authentication & Profile Management
 const registerLSP = async (req, res) => {
@@ -79,7 +80,6 @@ const createContainer = async (req, res) => {
 
 const getContainers = async (req, res) => {
   try {
-    const profile = await lspService.getLSPProfile(req.user.id);
     const filters = {
       status: req.query.status,
       is_available: req.query.is_available === 'true' ? true : req.query.is_available === 'false' ? false : undefined,
@@ -87,7 +87,7 @@ const getContainers = async (req, res) => {
       size: req.query.size
     };
     
-    const containers = await lspService.getContainers(profile.id, filters);
+    const containers = await lspService.getContainers(req.user.lsp_id, filters);
     res.status(200).json(containers);
   } catch (error) {
     console.error('Get Containers Error:', error.message);
@@ -131,13 +131,12 @@ const deleteContainer = async (req, res) => {
 // Booking Management
 const getBookings = async (req, res) => {
   try {
-    const profile = await lspService.getLSPProfile(req.user.id);
     const filters = {
       status: req.query.status,
       container_id: req.query.container_id
     };
     
-    const bookings = await lspService.getBookings(profile.id, filters);
+    const bookings = await lspService.getBookings(req.user.lsp_id, filters);
     res.status(200).json(bookings);
   } catch (error) {
     console.error('Get Bookings Error:', error.message);
@@ -159,9 +158,9 @@ const getBooking = async (req, res) => {
 const updateBookingStatus = async (req, res) => {
   try {
     const profile = await lspService.getLSPProfile(req.user.id);
-    const { status } = req.body;
+    const { status, notes } = req.body;
     
-    const booking = await lspService.updateBookingStatus(req.params.id, profile.id, status);
+    const booking = await lspService.updateBookingStatus(req.params.id, profile.id, status, notes);
     res.status(200).json(booking);
   } catch (error) {
     console.error('Update Booking Status Error:', error.message);
@@ -169,16 +168,62 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
+const approveBooking = async (req, res) => {
+  try {
+    const profile = await lspService.getLSPProfile(req.user.id);
+    const { approvalNotes } = req.body;
+    
+    const booking = await lspService.updateBookingStatus(req.params.id, profile.id, 'approved', approvalNotes);
+    res.status(200).json({
+      message: 'Booking approved successfully',
+      booking: booking
+    });
+  } catch (error) {
+    console.error('Approve Booking Error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const rejectBooking = async (req, res) => {
+  try {
+    const profile = await lspService.getLSPProfile(req.user.id);
+    const { rejectionReason } = req.body;
+    
+    if (!rejectionReason) {
+      return res.status(400).json({ error: 'Rejection reason is required' });
+    }
+    
+    const booking = await lspService.updateBookingStatus(req.params.id, profile.id, 'rejected', rejectionReason);
+    res.status(200).json({
+      message: 'Booking rejected successfully',
+      booking: booking
+    });
+  } catch (error) {
+    console.error('Reject Booking Error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const getPendingBookings = async (req, res) => {
+  try {
+    const profile = await lspService.getLSPProfile(req.user.id);
+    const bookings = await lspService.getPendingBookings(profile.id);
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error('Get Pending Bookings Error:', error.message);
+    res.status(400).json({ error: error.message });
+  }
+};
+
 // Shipment Management
 const getShipments = async (req, res) => {
   try {
-    const profile = await lspService.getLSPProfile(req.user.id);
     const filters = {
       status: req.query.status,
       booking_id: req.query.booking_id
     };
     
-    const shipments = await lspService.getShipments(profile.id, filters);
+    const shipments = await lspService.getShipments(req.user.lsp_id, filters);
     res.status(200).json(shipments);
   } catch (error) {
     console.error('Get Shipments Error:', error.message);
@@ -206,17 +251,91 @@ const updateShipmentStatus = async (req, res) => {
 // Complaint Management
 const getComplaints = async (req, res) => {
   try {
-    const profile = await lspService.getLSPProfile(req.user.id);
+    // Debug: Log user info
+    console.log('Get Complaints - User info:', {
+      hasUser: !!req.user,
+      userId: req.user?.id,
+      role: req.user?.role,
+      lspId: req.user?.lsp_id
+    });
+
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required. Please log in again.' });
+    }
+
+    if (!req.user.lsp_id) {
+      // If lsp_id is missing from token, try to fetch it from the database
+      console.log('lsp_id missing from token, fetching from database...');
+      try {
+        const lspProfile = await db.query(
+          'SELECT id FROM lsp_profiles WHERE user_id = $1',
+          [req.user.id]
+        );
+        
+        if (lspProfile.rows.length === 0) {
+          return res.status(400).json({ error: 'LSP profile not found. Please contact admin.' });
+        }
+        
+        req.user.lsp_id = lspProfile.rows[0].id;
+      } catch (dbError) {
+        console.error('Error fetching LSP profile:', dbError);
+        return res.status(400).json({ error: 'Failed to retrieve LSP information. Please log out and log in again.' });
+      }
+    }
+
     const filters = {
       status: req.query.status,
       priority: req.query.priority
     };
     
-    const complaints = await lspService.getComplaints(profile.id, filters);
+    const complaints = await lspService.getComplaints(req.user.lsp_id, filters);
+    
+    // Ensure we always return an array
+    if (!Array.isArray(complaints)) {
+      console.error('getComplaints returned non-array:', complaints);
+      return res.status(200).json([]);
+    }
+    
     res.status(200).json(complaints);
   } catch (error) {
     console.error('Get Complaints Error:', error.message);
-    res.status(400).json({ error: error.message });
+    console.error('Error stack:', error.stack);
+    res.status(400).json({ error: error.message || 'Failed to fetch complaints' });
+  }
+};
+
+const getComplaint = async (req, res) => {
+  try {
+    if (!req.user || !req.user.lsp_id) {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Authentication required. Please log in again.' });
+      }
+      
+      // Try to fetch lsp_id from database
+      const lspProfile = await db.query(
+        'SELECT id FROM lsp_profiles WHERE user_id = $1',
+        [req.user.id]
+      );
+      
+      if (lspProfile.rows.length === 0) {
+        return res.status(400).json({ error: 'LSP profile not found. Please contact admin.' });
+      }
+      
+      req.user.lsp_id = lspProfile.rows[0].id;
+    }
+
+    const complaintId = req.params.id;
+    const complaints = await lspService.getComplaints(req.user.lsp_id, {});
+    const complaint = complaints.find(c => c.id == complaintId); // Use == for type coercion
+    
+    if (!complaint) {
+      return res.status(404).json({ error: 'Complaint not found or access denied' });
+    }
+    
+    res.status(200).json(complaint);
+  } catch (error) {
+    console.error('Get Complaint Error:', error.message);
+    res.status(400).json({ error: error.message || 'Failed to fetch complaint' });
   }
 };
 
@@ -274,6 +393,18 @@ const getContainerTypes = async (req, res) => {
   }
 };
 
+// Analytics & Performance Metrics
+const getLSPAnalytics = async (req, res) => {
+  try {
+    // Use lsp_id from JWT token directly
+    const analytics = await lspService.getLSPAnalytics(req.user.lsp_id);
+    res.json(analytics);
+  } catch (error) {
+    console.error('Get LSP Analytics Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   registerLSP,
   loginLSP,
@@ -287,11 +418,16 @@ module.exports = {
   getBookings,
   getBooking,
   updateBookingStatus,
+  approveBooking,
+  rejectBooking,
+  getPendingBookings,
   getShipments,
   updateShipmentStatus,
   getComplaints,
+  getComplaint,
   resolveComplaint,
   getNotifications,
   markNotificationAsRead,
-  getContainerTypes
+  getContainerTypes,
+  getLSPAnalytics
 }; 

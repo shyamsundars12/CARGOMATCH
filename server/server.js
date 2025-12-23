@@ -4,6 +4,11 @@ const dotenv = require("dotenv");
 const path = require("path");
 const authRoutes = require("./src/routes/authRoutes");
 const lspRoutes = require("./src/routes/lspRoutes");
+const adminRoutes = require('./src/routes/adminRoutes');
+const traderRoutes = require('./src/routes/traderRoutes');
+const fileRoutes = require('./src/routes/fileRoutes');
+const cloudinaryRoutes = require('./src/routes/cloudinaryRoutes');
+
 const { initializeCronJobs } = require("./src/services/cronService");
 
 dotenv.config();
@@ -24,6 +29,11 @@ app.get("/", (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/lsp', lspRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/trader', traderRoutes);
+app.use('/api/files', fileRoutes);
+app.use('/api/cloudinary', cloudinaryRoutes);
+
 
 // Initialize cron jobs
 initializeCronJobs();
